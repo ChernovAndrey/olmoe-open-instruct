@@ -224,7 +224,7 @@ def main(args):
 
         # Save to a file
         with open(os.path.join(
-                args.save_dir, "{}.csv".format(subject)
+                args.save_dir, "{}.pkl".format(subject)
             ), "wb") as f:  # "wb" means write in binary mode
             pickle.dump(gating_alphas, f)
 
