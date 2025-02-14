@@ -156,7 +156,7 @@ def get_next_word_predictions(model, tokenizer, prompts, candidate_token_ids=Non
         print(f'shape prob in the hook before reshaping:{probabilities.shape}')
         # probabilities = probabilities.view(batch_size, -1, probabilities.shape[-1])
         probabilities = probabilities.view(len(batch_prompts), -1, probabilities.shape[-1])
-
+        print(f'shape prob in the hook after reshaping:{probabilities.shape}')
         if layer_idx not in gating_alphas:
             gating_alphas[layer_idx] = []  # Store multiple generations step-by-step
 
