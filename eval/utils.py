@@ -168,8 +168,8 @@ def get_next_word_predictions(model, tokenizer, prompts, candidate_token_ids=Non
 
     for i in range(0, len(prompts), batch_size):
         batch_prompts = prompts[i: i + batch_size]
-        print('batch prompts:')
-        print(batch_prompts)
+        # print('batch prompts:')
+        # print(batch_prompts)
         tokenized_prompts = tokenizer(batch_prompts, padding="longest", return_tensors="pt",
                                       add_special_tokens=add_special_tokens)
         batch_input_ids = tokenized_prompts.input_ids
@@ -196,8 +196,8 @@ def get_next_word_predictions(model, tokenizer, prompts, candidate_token_ids=Non
             predictions += batch_prediction_indices.tolist()
         probs += batch_probs.tolist()
 
-        print(f'alphas len:{len(gating_alphas[0])}')
-        print(f'last alphas shape: {gating_alphas[0][-1].shape}')
+        # print(f'alphas len:{len(gating_alphas[0])}')
+        # print(f'last alphas shape: {gating_alphas[0][-1].shape}')
 
         if not disable_tqdm:
             progress.update(len(batch_prompts))
