@@ -149,14 +149,13 @@ def get_next_word_predictions(model, tokenizer, prompts, candidate_token_ids=Non
         progress = tqdm.tqdm(total=len(prompts), desc="Getting Predictions")
 
     gating_alphas = {}
-    print(f'batch_size:{batch_size}')
     def hook(module, input, output, layer_idx):
         """Capture gating probabilities only for generated tokens."""
         probabilities = F.softmax(output, dim=-1).detach().cpu()
-        print(f'shape prob in the hook before reshaping:{probabilities.shape}')
+        # print(f'shape prob in the hook before reshaping:{probabilities.shape}')
         # probabilities = probabilities.view(batch_size, -1, probabilities.shape[-1])
         probabilities = probabilities.view(len(batch_prompts), -1, probabilities.shape[-1])
-        print(f'shape prob in the hook after reshaping:{probabilities.shape}')
+        # print(f'shape prob in the hook after reshaping:{probabilities.shape}')
         if layer_idx not in gating_alphas:
             gating_alphas[layer_idx] = []  # Store multiple generations step-by-step
 
@@ -171,7 +170,7 @@ def get_next_word_predictions(model, tokenizer, prompts, candidate_token_ids=Non
     for i in range(0, len(prompts), batch_size):
         batch_prompts = prompts[i: i + batch_size]
         # print('batch prompts:')
-        print(len(batch_prompts))
+        # print(len(batch_prompts))
         tokenized_prompts = tokenizer(batch_prompts, padding="longest", return_tensors="pt",
                                       add_special_tokens=add_special_tokens)
         batch_input_ids = tokenized_prompts.input_ids
