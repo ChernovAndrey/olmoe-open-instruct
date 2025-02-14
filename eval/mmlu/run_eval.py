@@ -7,7 +7,7 @@ import json
 from tqdm import tqdm
 from eval.mmlu.categories import subcategories, categories
 from eval.utils import get_next_word_predictions, load_hf_tokenizer, load_hf_lm, query_openai_chat_model, dynamic_import_function, upload_results_to_hf, check_and_upload_model_metadata
-
+import pickle
 
 choices = ["A", "B", "C", "D"]
 
@@ -82,7 +82,7 @@ def eval_hf_model(args, subject, model, tokenizer, dev_df, test_df, batch_size=1
     # adding a prefix space here, as that's expected from the prompt
     # TODO: should raise a warning if this returns more than one token
     answer_choice_ids = [tokenizer.encode(" " + answer_choice, add_special_tokens=False)[-1] for answer_choice in choices]
-    pred_indices, all_probs = get_next_word_predictions(
+    pred_indices, all_probs, gating_alphas = get_next_word_predictions(
         model, tokenizer, prompts, candidate_token_ids=answer_choice_ids, return_token_predictions=False, batch_size=batch_size
     )
 
@@ -93,13 +93,14 @@ def eval_hf_model(args, subject, model, tokenizer, dev_df, test_df, batch_size=1
         prediction = choices[pred_indices[i]]
         ground_truth = groud_truths[i]
         cors.append(prediction == ground_truth)
-        
+
+    #TODO: save test: X,y,y_pred and alphas.
     acc = np.mean(cors)
     cors = np.array(cors)
 
     all_probs = np.array(all_probs)
     print("Average accuracy {:.3f} - {}".format(acc, subject))
-    return cors, acc, all_probs
+    return cors, acc, all_probs, gating_alphas
 
 
 def eval_openai_chat_engine(args, subject, engine, dev_df, test_df, batch_size=1):
@@ -197,8 +198,9 @@ def main(args):
             test_df = test_df.sample(args.n_instances, random_state=42)
 
         if args.model_name_or_path:
-            cors, acc, probs = eval_hf_model(args, subject, model, tokenizer, dev_df, test_df, args.eval_batch_size)
+            cors, acc, probs, gating_alphas = eval_hf_model(args, subject, model, tokenizer, dev_df, test_df, args.eval_batch_size)
         else:
+            gating_alphas = {}
             cors, acc, probs = eval_openai_chat_engine(args, subject, args.openai_engine, dev_df, test_df, args.eval_batch_size)
             
         subcats = subcategories[subject]
@@ -219,6 +221,12 @@ def main(args):
             ),
             index=None,
         )
+
+        # Save to a file
+        with open(os.path.join(
+                args.save_dir, "{}.csv".format(subject)
+            ), "wb") as f:  # "wb" means write in binary mode
+            pickle.dump(gating_alphas, f)
 
     for subcat in subcat_cors:
         subcat_acc = np.mean(np.concatenate(subcat_cors[subcat]))
